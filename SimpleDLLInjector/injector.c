@@ -1,13 +1,10 @@
-#include "injector.hpp"
+#include "injector.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <Windows.h>
 
-typedef HMODULE(__stdcall* LoadLibraryA_funcPtr_t)(LPCSTR);
-typedef FARPROC(__stdcall* GetProcAddress_funcPtr_t)(HMODULE, LPCSTR);
-typedef INT(__stdcall* DllMain_funcPtr_t)(HMODULE, DWORD, LPVOID);
+typedef HMODULE(WINAPI* LoadLibraryA_funcPtr_t)(LPCSTR);
+typedef FARPROC(WINAPI* GetProcAddress_funcPtr_t)(HMODULE, LPCSTR);
+typedef INT(WINAPI* DllMain_funcPtr_t)(HMODULE, DWORD, LPVOID);
 
 typedef struct
 {
@@ -21,10 +18,10 @@ typedef struct
 	GetProcAddress_funcPtr_t	pFuncGetProcAddress;
 } ImageLoaderData_t;
 
-static DWORD __stdcall library_loader(LPVOID pMemory);
-static DWORD __stdcall stub();
+static DWORD WINAPI library_loader(LPVOID pMemory);
+static DWORD WINAPI stub();
 
-void inject(DWORD dwPID, LPCSTR cstrDLLFilePath)
+void inject(unsigned long dwPID, const char *cstrDLLFilePath)
 {
 	// Open the DLL
 	HANDLE hFile = CreateFileA(cstrDLLFilePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
@@ -89,7 +86,7 @@ void inject(DWORD dwPID, LPCSTR cstrDLLFilePath)
 	VirtualFreeEx(hProcess, pLoaderMemory, 0, MEM_RELEASE);
 }
 
-DWORD __stdcall library_loader(LPVOID pMemory)
+DWORD WINAPI library_loader(LPVOID pMemory)
 {
 	ImageLoaderData_t* pILD = (ImageLoaderData_t*)pMemory;
 
@@ -165,11 +162,7 @@ DWORD __stdcall library_loader(LPVOID pMemory)
 	return TRUE;
 }
 
-DWORD __stdcall stub()
+DWORD WINAPI stub()
 {
 	return 0;
 }
-
-#ifdef __cplusplus
-}
-#endif
